@@ -5,6 +5,6 @@ Este trabalho está sendo desenvolvido no escopo do convênio existente entre o 
 
 Descrição dos Códigos:
 
-* context-server:
+context-server:
 
-* gateway:
+gateway:
