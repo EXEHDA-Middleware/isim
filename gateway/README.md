@@ -14,5 +14,5 @@
 * Utilizando o Relógio DS3231:
   * [Exemplos de Códigos em Micropython](https://www.engineersgarage.com/micropython-esp8266-esp32-rtc-utc-local-time/)
   * [Pinagem](https://esp32io.com/tutorials/esp32-rtc)
-* [Pinagem ESP 32 com 38 pinos](https://www.reddit.com/r/diyelectronics/comments/112dx6n/esp32_38_pin_pinout_cheat_sheet/?rdt=35959) - [Cópía local](https://github.com/adenauery/graciela/blob/main/esp32-38-pin-pinout.png)
+* [Pinagem ESP 32 com 38 pinos](https://www.reddit.com/r/diyelectronics/comments/112dx6n/esp32_38_pin_pinout_cheat_sheet/?rdt=35959) - [Cópía local](https://github.com/exehdamiddleware/isim/blob/main/gateway/esp32-38-pin-pinout.png)
 
