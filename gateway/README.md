@@ -1,7 +1,7 @@
 ## Código do iSim Gateway
 
 ### main.py 
-[Código do Gateway EXEHDA](gateway/main.py) em uso na Abordagem iSim para coleta dos dados sensoriados nos reservatórios do SANEP
+[Código do Gateway](https://github.com/exehdamiddleware/isim/blob/main/gateway/main.py) em uso na Abordagem iSim para coleta dos dados sensoriados nos reservatórios do SANEP
 
 ### Documentações das bibliotecas utilizadas:
 
