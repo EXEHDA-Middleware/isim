@@ -3,9 +3,8 @@
 # Authors: Graciela Viana
 #          Adenauer Yamin
 #          Fernanda Mota
-# Last editing: 2024-01-14 - 13:06 h
+# Last editing: 2024-01-29 - 21:04 h
 # ########################################
-from ds3231_port import DS3231
 import onewire, ds18x20
 import sys
 global pinn
@@ -22,6 +21,7 @@ from machine import Pin, Timer, SoftI2C, RTC
 from ds3231_port import DS3231
 import machine
 import os
+import _thread
 
 # Phisical Associations
 red = machine.Pin(25, machine.Pin.OUT)
@@ -31,7 +31,6 @@ buzzer = machine.Pin(26, machine.Pin.OUT)
 I2C_RTC_SCL_PIN = Pin(22)
 I2C_RTC_SDA_PIN = Pin(21)
 
-# DS3231 Clock Signings
 i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
 rtc_ds3231 = DS3231(i2c_clock)
 
@@ -40,11 +39,6 @@ rtc_ds3231 = DS3231(i2c_clock)
 buzzer.value(1)
 time.sleep(0.5)
 buzzer.value(0)
-
-# A time interval do cancel de execution - 15 seconds
-yellow.value(1)
-time.sleep(15)
-yellow.value(0)
 
 #  Variables of Type List to Register Sensors Values
 publication_payload=[]
@@ -97,21 +91,63 @@ def conecta_rede():
         while not sta_if.isconnected():
             pass # wait till connection
     red.value(0)    
-conecta_rede()
+print("Antes do conecta Rede")
+_thread.start_new_thread(conecta_rede, ())
+print("Apos o conecta Rede")
+
+
+# Time interval do cancel de execution and Wi-Fi conection - 15 seconds
+yellow.value(1)
+time.sleep(15)
+yellow.value(0)
 
 # NTP to internal clock adjust
 tentativas_ajuste_relogio = 0
 ajuste_relogio = 0
-while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 30:
+while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 3:
+    print(ajuste_relogio)
     try:
         ntptime.host = "a.ntp.br"
-        ntptime.settime()  
+        ntptime.settime()
+        print("Após o NTP")
         ajuste_relogio=1
     except:
         time.sleep(5)
         tentativas_ajuste_relogio = tentativas_ajuste_relogio + 1
         print("Tentativas ajuste relogio：%s" %str(tentativas_ajuste_relogio))
         ajuste_relogio=0
+
+
+dict = {}
+print("Antes do IF")
+print(ajuste_relogio)
+if ajuste_relogio == 1:
+    rtc_ds3231.save_time()
+    dict["data"] = "Gateway restarted with NTP time atualization"
+    print("Gateway restarted with NTP time atualization")
+else:
+    tm = rtc_ds3231.get_time()
+    RTC().datetime((tm[0], tm[1], tm[2], tm[6], tm[3], tm[4], tm[5], 0))
+    dict["data"] = "Gateway restarted with time atualized from local clock (DS3231)"
+    print("Gateway restarted with time atualized from local clock (DS3231)")
+
+ano=time.localtime()[0]
+mes=time.localtime()[1]
+dia=time.localtime()[2]
+hora=time.localtime()[3]
+minuto=time.localtime()[4]
+segundo=time.localtime()[5]
+
+datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
+
+dict["gathered_at"] = datahorautc
+dict["type"] = "log"
+dict["gateway"] = {}
+dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+
+log_reinicio_time_source = ujson.dumps(dict)
+stack_pub("exehda-pub", log_reinicio_time_source)
+print(log_reinicio_time_source)
 
 ano=time.localtime()[0]
 mes=time.localtime()[1]
@@ -128,20 +164,9 @@ dict["type"] = "log"
 dict["gateway"] = {}
 dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
 dict["data"] = "DS3231 time at restart: " + str(rtc_ds3231.get_time())
+
 log_reinicio_ds3231_time = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_ds3231_time)
-
-
-if ajuste_relogio == 1:
-    rtc_ds3231.save_time()
-    dict["data"] = "Gateway restarted with NTP time atualization"
-else:
-    tm = rtc_ds3231.get_time()
-    RTC().datetime((tm[0], tm[1], tm[2], tm[6], tm[3], tm[4], tm[5], 0))
-    dict["data"] = "Gateway restarted with time atualized from local clock (DS3231)"
-
-log_reinicio_time_source = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_time_source)
 
 ano=time.localtime()[0]
 mes=time.localtime()[1]
@@ -164,26 +189,37 @@ stack_pub("exehda-pub", log_reinicio_time)
 
 try:
     file_sensor_topic = open("sensor_topic.txt", "r")
-    for topic_value in file_sensor_topic:
-        publication_topic.append(topic_value)
+    print("passou pelo open")
+    lista_publication_topic = file_sensor_topic.read() 
+    data_publication_topic = lista_publication_topic.split("\n")
+    while (len(data_publication_topic)  >  0):
+        if (len(data_publication_topic[0]) > 0):
+            print(data_publication_topic[0])
+            publication_topic.append(data_publication_topic[0])
+        data_publication_topic.pop(0)
     file_sensor_topic.close()
-    os.remove("sensor_topic.txt")
-    dict["data"] = "Gateway restarted with recovery topic sensor data file"
+    os.remove("sensor_topic.txt")    
+    print("Gateway restarted with recovery topic sensor data file")
 except:
-    dict["data"] = "Gateway restarted without recovery topic sensor data file"
+    print("Gateway restarted without recovery topic sensor data file")
 
 log_reinicio_data = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_data)
 
 try:
     file_sensor_payload = open("sensor_payload.txt", "r")
-    for payload_value in file_sensor_payload:
-        publication_payload.append(payload_value)
-    file_sensor_payload.close() 
-    os.remove("sensor_payload.txt")
-    dict["data"] = "Gateway restarted with recovery payload sensor data file"
+    lista_publication_payload = file_sensor_payload.read() 
+    data_publication_payload = lista_publication_payload.split("\n")
+    while (len(data_publication_payload)  >  0):
+        if len(data_publication_payload[0]) > 0:
+            print(data_publication_payload[0])
+            publication_payload.append(data_publication_payload[0])
+        data_publication_payload.pop(0)
+    file_sensor_payload.close()
+    os.remove("sensor_payload.txt")    
+    print("Gateway restarted with recovery payload sensor data file")
 except:
-    dict["data"] = "Gateway restarted without recovery payload sensor data file"
+    print("Gateway restarted without recovery payload sensor data file")
 
 log_reinicio_data = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_data)
@@ -1255,16 +1291,22 @@ def scheduler(timer):
         if (len(publication_topic)  >  0):
             file_sensor_topic = open("sensor_topic.txt", "w")
             while (len(publication_topic)  >  0):
-                file_sensor_topic.write(publication_topic[0])
+#                print(publication_topic[0])
+#                print(str(publication_topic[0]))
+                file_sensor_topic.write(str(publication_topic[0]))
                 file_sensor_topic.write("\n")
+#                print(len(publication_topic))
                 publication_topic.pop(0)
             file_sensor_topic.close()
 # Payloads:
         if (len(publication_payload)  >  0):
             file_sensor_payload = open("sensor_payload.txt", "w")
             while (len(publication_payload)  >  0):
-                file_sensor_payload.write(publication_payload[0])
+#                print(publication_payload[0])
+#                print(str(publication_payload[0]))
+                file_sensor_payload.write(str(publication_payload[0]))
                 file_sensor_payload.write("\n")
+#                print(len(publication_payload))
                 publication_payload.pop(0)
             file_sensor_payload.close()
 # Restart device
