@@ -3,12 +3,11 @@
 # Authors: Graciela Viana
 #          Adenauer Yamin
 #          Fernanda Mota
-# Last editing: 2024-01-29 - 21:04 h
-# ########################################
+# Last editing: 2024-01-29 - 21:26 h
+# ######################################## 
 import onewire, ds18x20
 import sys
 global pinn
-global value_sensor
 import utime
 import _thread
 from umqtt.simple import MQTTClient
@@ -17,11 +16,13 @@ import ujson
 import time
 import ntptime
 import utime
-from machine import Pin, Timer, SoftI2C, RTC
+from machine import Pin, Timer, SoftI2C, RTC, WDT
 from ds3231_port import DS3231
 import machine
 import os
 import _thread
+
+print("Programa main.py iniciado")
 
 # Phisical Associations
 red = machine.Pin(25, machine.Pin.OUT)
@@ -43,6 +44,10 @@ buzzer.value(0)
 #  Variables of Type List to Register Sensors Values
 publication_payload=[]
 publication_topic=[]
+
+
+#WatchDog ativation - 20 minutes
+wdtimer = WDT(timeout=1200000)
 
 # MQTT Settings
 mqtt_client_id='EXEHDAg666'
@@ -96,20 +101,22 @@ _thread.start_new_thread(conecta_rede, ())
 print("Apos o conecta Rede")
 
 
-# Time interval do cancel de execution and Wi-Fi conection - 15 seconds
+# Time interval to cancel de execution - 15 seconds
 yellow.value(1)
+print("Time interval to cancel de execution started - 15 seconds")
 time.sleep(15)
 yellow.value(0)
+print("Time interval to cancel de execution finished - 15 seconds")
+
 
 # NTP to internal clock adjust
 tentativas_ajuste_relogio = 0
 ajuste_relogio = 0
-while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 3:
+while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 30:
     print(ajuste_relogio)
     try:
         ntptime.host = "a.ntp.br"
         ntptime.settime()
-        print("Após o NTP")
         ajuste_relogio=1
     except:
         time.sleep(5)
@@ -119,8 +126,6 @@ while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 3:
 
 
 dict = {}
-print("Antes do IF")
-print(ajuste_relogio)
 if ajuste_relogio == 1:
     rtc_ds3231.save_time()
     dict["data"] = "Gateway restarted with NTP time atualization"
@@ -189,7 +194,6 @@ stack_pub("exehda-pub", log_reinicio_time)
 
 try:
     file_sensor_topic = open("sensor_topic.txt", "r")
-    print("passou pelo open")
     lista_publication_topic = file_sensor_topic.read() 
     data_publication_topic = lista_publication_topic.split("\n")
     while (len(data_publication_topic)  >  0):
@@ -235,7 +239,7 @@ ds.convert_temp()
 sensor_value1 = ds.read_temp(temperature_sensor_list[0]) 
 sensor_value2 = ds.read_temp(temperature_sensor_list[1])
 
-def sensor_read_simulado():
+def sensor_read_simulated():
 
   valor_umidade_ar = 00.00
   condutividade_agua = 00.00
@@ -713,7 +717,7 @@ def sensor_read_simulado():
         condutividade_agua = 59.7
         ph_agua = 6.72
         pressao_reservatorio = 14.22
-				
+                
     if (minuto == 30):
         valor_umidade_ar = 72
         condutividade_agua = 60.32
@@ -1179,10 +1183,10 @@ def sensor_read_simulado():
   pub_payload = ujson.dumps(dict)
   stack_pub("exehda-pub", pub_payload)
 
-
 def sensor_read():
 #    try:
-        sensor_read_simulado()
+        wdtimer.feed()
+        sensor_read_simulated()
         global publication_payload
         global publication_topic
         gpio_port=13  
@@ -1235,7 +1239,27 @@ def sensor_read():
         stack_pub("exehda-pub", pub_payload)   
 
         mqtt_publication()
-
+#     except:
+#         print("Problems Reading Sensors - Publication Supressed")
+#         ano=time.localtime()[0]
+#         mes=time.localtime()[1]
+#         dia=time.localtime()[2]
+#         hora=time.localtime()[3]
+#         minuto=time.localtime()[4]
+#         segundo=time.localtime()[5]
+# 
+#         datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
+#         dict = {}
+#         dict["gathered_at"] = datahorautc
+#         dict["type"] = "log"
+#         dict["gateway"] = {}
+#         dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+#         dict["data"] = "Problems Reading Sensors - Publication Supressed"
+# 
+#         log_sensor_read = ujson.dumps(dict)
+#         stack_pub("exehda-pub", log_sensor_read)
+        
+        
 min00=0
 min10=0
 min20=0
@@ -1284,8 +1308,7 @@ def scheduler(timer):
         sensor_read()
 
 # Before restart save values in memory in files
-    if ((hora == 3) & (minuto == 5)):
-        print(hora)
+    if ((hora == 03) & (minuto == 5)):
         time.sleep(60)
 # Topics:
         if (len(publication_topic)  >  0):
@@ -1312,5 +1335,6 @@ def scheduler(timer):
 # Restart device
         machine.reset()
 
+print("Timer started - 1 s")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
