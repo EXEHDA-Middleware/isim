@@ -11,7 +11,6 @@ global pinn
 import utime
 import _thread
 from umqtt.simple import MQTTClient
-from time import sleep
 import ujson
 import time
 import ntptime
