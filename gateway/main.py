@@ -8,7 +8,6 @@
 import onewire, ds18x20
 import sys
 global pinn
-import utime
 import _thread
 from umqtt.simple import MQTTClient
 import ujson
@@ -19,11 +18,19 @@ from machine import Pin, Timer, SoftI2C, RTC, WDT
 from ds3231_port import DS3231
 import machine
 import os
-import _thread
+import ubinascii
 
 print("Programa main.py iniciado")
 
-# Phisical Associations
+# Buzzer Ativation to Register the Gateway Operations Start
+buzzer.value(1)
+time.sleep(0.5)
+buzzer.value(0)
+
+#WatchDog ativation - 20 minutes
+wdtimer = WDT(timeout=1200000)
+
+# Physical Associations
 red = machine.Pin(25, machine.Pin.OUT)
 yellow = machine.Pin(33, machine.Pin.OUT)
 green = machine.Pin(32, machine.Pin.OUT)
@@ -31,26 +38,18 @@ buzzer = machine.Pin(26, machine.Pin.OUT)
 I2C_RTC_SCL_PIN = Pin(22)
 I2C_RTC_SDA_PIN = Pin(21)
 
-i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
-rtc_ds3231 = DS3231(i2c_clock)
-
-
-# Buzzer Ativation to Register the Gateway Operations Start
-buzzer.value(1)
-time.sleep(0.5)
-buzzer.value(0)
-
 #  Variables of Type List to Register Sensors Values
 publication_payload=[]
 publication_topic=[]
 
-
-#WatchDog ativation - 20 minutes
-wdtimer = WDT(timeout=1200000)
-
 # MQTT Settings
-mqtt_client_id='EXEHDAg666'
+mqtt_client_id=ubinascii.hexlify(machine.unique_id())
 mqtt_server='200.132.103.53'
+
+#I2C Settings
+#I2C Clock Settings
+i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
+rtc_ds3231 = DS3231(i2c_clock)
 
 def stack_pub(mqtt_topic, mqtt_payload):
     global publication_payload
