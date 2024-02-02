@@ -3,7 +3,7 @@
 # Authors: Graciela Viana
 #          Adenauer Yamin
 #          Fernanda Mota
-# Last editing: 2024-02-01 - 08:26 h
+# Last editing: 2024-02-02 - 19:26 h
 # ######################################## 
 import onewire, ds18x20
 import sys
@@ -22,14 +22,6 @@ import ubinascii
 
 print("Program main.py started")
 
-# Buzzer Ativation to Register the Gateway Operations Start
-buzzer.value(1)
-time.sleep(0.5)
-buzzer.value(0)
-
-# WatchDog ativation - 20 minutes
-wdtimer = WDT(timeout=1200000)
-
 # Physical Associations
 red = machine.Pin(25, machine.Pin.OUT)
 yellow = machine.Pin(33, machine.Pin.OUT)
@@ -38,12 +30,21 @@ buzzer = machine.Pin(26, machine.Pin.OUT)
 I2C_RTC_SCL_PIN = Pin(22)
 I2C_RTC_SDA_PIN = Pin(21)
 
+# Buzzer Ativation to Register the Gateway Operations Start
+buzzer.value(1)
+time.sleep(0.5)
+buzzer.value(0)
+
+# WatchDog ativation - 20 minutes
+wdtimer = WDT(timeout=1200000)
+
 # Variables of Type List to Register Sensors Values
 publication_payload=[]
 publication_topic=[]
 
 # MQTT Settings
 mqtt_client_id = ubinascii.hexlify(machine.unique_id())
+print(mqtt_client_id)
 mqtt_server='200.132.103.53'
 
 # I2C Settings
@@ -96,18 +97,15 @@ def conecta_rede():
         while not sta_if.isconnected():
             pass # wait till connection
     red.value(0)    
-print("Antes do conecta Rede")
 _thread.start_new_thread(conecta_rede, ())
-print("Apos o conecta Rede")
 
 
-# Time interval to cancel de execution - 15 seconds
+# Time interval to cancel the execution - 15 seconds
 yellow.value(1)
-print("Time interval to cancel de execution started - 15 seconds")
+print("Time interval to cancel the execution started - 15 seconds")
 time.sleep(15)
 yellow.value(0)
-print("Time interval to cancel de execution finished - 15 seconds")
-
+print("Time interval to cancel the execution finished - 15 seconds")
 
 # NTP to internal clock adjust
 tentativas_ajuste_relogio = 0
@@ -124,16 +122,14 @@ while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 30:
         print("Tentativas ajuste relogio：%s" %str(tentativas_ajuste_relogio))
         ajuste_relogio=0
 
-
-dict = {}
 if ajuste_relogio == 1:
     rtc_ds3231.save_time()
-    dict["data"] = "Gateway restarted with NTP time atualization"
+    started_time_source = "Gateway restarted with NTP time atualization"
     print("Gateway restarted with NTP time atualization")
 else:
     tm = rtc_ds3231.get_time()
     RTC().datetime((tm[0], tm[1], tm[2], tm[6], tm[3], tm[4], tm[5], 0))
-    dict["data"] = "Gateway restarted with time atualized from local clock (DS3231)"
+    started_time_source = "Gateway restarted with time atualized from local clock (DS3231)"
     print("Gateway restarted with time atualized from local clock (DS3231)")
 
 ano=time.localtime()[0]
@@ -145,10 +141,12 @@ segundo=time.localtime()[5]
 
 datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
 
+dict = {}
 dict["gathered_at"] = datahorautc
 dict["type"] = "log"
 dict["gateway"] = {}
 dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+dict["data"] = started_time_source
 
 log_reinicio_time_source = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_time_source)
@@ -172,6 +170,7 @@ dict["data"] = "DS3231 time at restart: " + str(rtc_ds3231.get_time())
 
 log_reinicio_ds3231_time = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_ds3231_time)
+print(log_reinicio_ds3231_time)
 
 ano=time.localtime()[0]
 mes=time.localtime()[1]
@@ -186,11 +185,11 @@ dict["gathered_at"] = datahorautc
 dict["type"] = "log"
 dict["gateway"] = {}
 dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+dict["data"] = "Gateway Restart at " + datahorautc
 
-restart_time = "Gateway Restart at " + datahorautc
-dict["data"] = restart_time
 log_reinicio_time = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_time)
+print(log_reinicio_time)
 
 try:
     file_sensor_topic = open("sensor_topic.txt", "r")
@@ -207,9 +206,6 @@ try:
 except:
     print("Gateway restarted without recovery topic sensor data file")
 
-log_reinicio_data = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_data)
-
 try:
     file_sensor_payload = open("sensor_payload.txt", "r")
     lista_publication_payload = file_sensor_payload.read() 
@@ -222,13 +218,33 @@ try:
     file_sensor_payload.close()
     os.remove("sensor_payload.txt")    
     print("Gateway restarted with recovery payload sensor data file")
+    recovery_status = "Gateway restarted with recovery from sensor data file"
+    
 except:
     print("Gateway restarted without recovery payload sensor data file")
+    recovery_status = "Gateway restarted without recovery from sensor data file"
+    
+ano=time.localtime()[0]
+mes=time.localtime()[1]
+dia=time.localtime()[2]
+hora=time.localtime()[3]
+minuto=time.localtime()[4]
+segundo=time.localtime()[5]
+
+datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
+dict = {}                                                                                                                                                                                              
+dict["gathered_at"] = datahorautc
+dict["type"] = "log"
+dict["gateway"] = {}
+dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+dict["data"] = recovery_status
 
 log_reinicio_data = ujson.dumps(dict)
 stack_pub("exehda-pub", log_reinicio_data)
+print(log_reinicio_data)
 
 mqtt_publication()
+
 
 # DS18b20 first read error handling
 gpio_port=13  
@@ -1338,3 +1354,4 @@ def scheduler(timer):
 print("Timer started - 1 s")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
+
