@@ -20,7 +20,7 @@ import machine
 import os
 import ubinascii
 
-print("Programa main.py iniciado")
+print("Program main.py started")
 
 # Buzzer Ativation to Register the Gateway Operations Start
 buzzer.value(1)
@@ -51,12 +51,14 @@ mqtt_server='200.132.103.53'
 i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
 rtc_ds3231 = DS3231(i2c_clock)
 
+# Function that places the data to be transmitted in the last position of the queue
 def stack_pub(mqtt_topic, mqtt_payload):
     global publication_payload
     global publication_topic   
     publication_topic.append(mqtt_topic)
     publication_payload.append(mqtt_payload)
 
+# Function that transmits data using the oldest first criteria as a criterion
 def mqtt_publication():
     global publication_payload
     global publication_topic
@@ -70,7 +72,7 @@ def mqtt_publication():
                 client_g.publish(publication_topic[0], publication_payload[0].encode())
                 publication_topic.pop(0)
                 publication_payload.pop(0)
-                time.sleep(2)
+                time.sleep(1)
             except:
                 mqtt_pub_tentatives = mqtt_pub_tentatives + 1
                 print ("MQTT Publication tentatives: %s" %str(mqtt_pub_tentatives)) 
