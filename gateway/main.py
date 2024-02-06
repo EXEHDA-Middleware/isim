@@ -3,7 +3,7 @@
 # Authors: Graciela Viana
 #          Adenauer Yamin
 #          Fernanda Mota
-# Last editing: 2024-02-02 - 19:26 h
+# Last editing: 2024-02-06 - 20:44 h
 # ######################################## 
 import onewire, ds18x20
 import sys
@@ -53,9 +53,29 @@ i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
 rtc_ds3231 = DS3231(i2c_clock)
 
 # Function that places the data to be transmitted in the last position of the queue
-def stack_pub(mqtt_topic, mqtt_payload):
+def stack_pub(mqtt_type, mqtt_topic, payload):
+
     global publication_payload
-    global publication_topic   
+    global publication_topic 
+	
+	ano=time.localtime()[0]
+	mes=time.localtime()[1]
+	dia=time.localtime()[2]
+	hora=time.localtime()[3]
+	minuto=time.localtime()[4]
+	segundo=time.localtime()[5]
+
+	datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
+
+	dict = {}
+	dict["gathered_at"] = datahorautc
+	dict["type"] = mqtt_type
+	dict["gateway"] = {}
+	dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+	dict["data"] = payload
+
+	mqtt_payload = ujson.dumps(dict)
+  
     publication_topic.append(mqtt_topic)
     publication_payload.append(mqtt_payload)
 
@@ -132,64 +152,10 @@ else:
     started_time_source = "Gateway restarted with time atualized from local clock (DS3231)"
     print("Gateway restarted with time atualized from local clock (DS3231)")
 
-ano=time.localtime()[0]
-mes=time.localtime()[1]
-dia=time.localtime()[2]
-hora=time.localtime()[3]
-minuto=time.localtime()[4]
-segundo=time.localtime()[5]
+stack_pub("log", "exehda-pub", started_time_source)
 
-datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-
-dict = {}
-dict["gathered_at"] = datahorautc
-dict["type"] = "log"
-dict["gateway"] = {}
-dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-dict["data"] = started_time_source
-
-log_reinicio_time_source = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_time_source)
-print(log_reinicio_time_source)
-
-ano=time.localtime()[0]
-mes=time.localtime()[1]
-dia=time.localtime()[2]
-hora=time.localtime()[3]
-minuto=time.localtime()[4]
-segundo=time.localtime()[5]
-
-datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-
-dict = {}                                                                                                                                                                                              
-dict["gathered_at"] = datahorautc
-dict["type"] = "log"
-dict["gateway"] = {}
-dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-dict["data"] = "DS3231 time at restart: " + str(rtc_ds3231.get_time())
-
-log_reinicio_ds3231_time = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_ds3231_time)
-print(log_reinicio_ds3231_time)
-
-ano=time.localtime()[0]
-mes=time.localtime()[1]
-dia=time.localtime()[2]
-hora=time.localtime()[3]
-minuto=time.localtime()[4]
-segundo=time.localtime()[5]
-
-datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-dict = {}                                                                                                                                                                                              
-dict["gathered_at"] = datahorautc
-dict["type"] = "log"
-dict["gateway"] = {}
-dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-dict["data"] = "Gateway Restart at " + datahorautc
-
-log_reinicio_time = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_time)
-print(log_reinicio_time)
+DS3231_time = "DS3231 time at restart: " + str(rtc_ds3231.get_time())
+stack_pub("log", "exehda-pub", DS3231_time)
 
 try:
     file_sensor_topic = open("sensor_topic.txt", "r")
@@ -223,25 +189,8 @@ try:
 except:
     print("Gateway restarted without recovery payload sensor data file")
     recovery_status = "Gateway restarted without recovery from sensor data file"
-    
-ano=time.localtime()[0]
-mes=time.localtime()[1]
-dia=time.localtime()[2]
-hora=time.localtime()[3]
-minuto=time.localtime()[4]
-segundo=time.localtime()[5]
 
-datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-dict = {}                                                                                                                                                                                              
-dict["gathered_at"] = datahorautc
-dict["type"] = "log"
-dict["gateway"] = {}
-dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-dict["data"] = recovery_status
-
-log_reinicio_data = ujson.dumps(dict)
-stack_pub("exehda-pub", log_reinicio_data)
-print(log_reinicio_data)
+stack_pub("log", "exehda-pub", recovery_status)
 
 mqtt_publication()
 
@@ -261,15 +210,6 @@ def sensor_read_simulated():
   condutividade_agua = 00.00
   ph_agua = 0.00
   pressao_reservatorio = 00.00
-
-  ano=time.localtime()[0]
-  mes=time.localtime()[1]
-  dia=time.localtime()[2]
-  hora=time.localtime()[3]
-  minuto=time.localtime()[4]
-  segundo=time.localtime()[5]
-
-  datahorautc=str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
 
   if (hora == 3):
     if (minuto == 0):
@@ -1159,48 +1099,16 @@ def sensor_read_simulated():
         ph_agua = 6.83
         pressao_reservatorio = 10.68
 
-  dict = {}                                                                                                                                                                                              
-  dict["gathered_at"] = datahorautc
-  dict["type"] = "publication"
-  dict["uuid"] = "0c0a40d1-5a15-4f26-b85f-25868dfff6ee"
-  dict["gateway"] = {}
-  dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-  dict["data"] = valor_umidade_ar
-  pub_payload = ujson.dumps(dict)
-  stack_pub("exehda-pub", pub_payload)
-
-  dict = {}                                                                                                                                                                                              
-  dict["gathered_at"] = datahorautc
-  dict["type"] = "publication"
-  dict["uuid"] = "c96e3b82-6e50-4b39-86d4-ab175dbdeb49"
-  dict["gateway"] = {}
-  dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-  dict["data"] = condutividade_agua
-  pub_payload = ujson.dumps(dict)
-  stack_pub("exehda-pub", pub_payload)
-
-  dict = {}                                                                                                                                                                                              
-  dict["gathered_at"] = datahorautc
-  dict["type"] = "publication"
-  dict["uuid"] = "e038eaa2-15de-44e0-8395-d3299e69a5d0"
-  dict["gateway"] = {}
-  dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-  dict["data"] = ph_agua
-  pub_payload = ujson.dumps(dict)
-  stack_pub("exehda-pub", pub_payload)
-
-  dict = {}                                                                                                                                                                                              
-  dict["gathered_at"] = datahorautc
-  dict["type"] = "publication"
-  dict["uuid"] = "0f79791e-8135-442f-b890-0ae1b05786d6"
-  dict["gateway"] = {}
-  dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-  dict["data"] = pressao_reservatorio
-  pub_payload = ujson.dumps(dict)
-  stack_pub("exehda-pub", pub_payload)
+  stack_pub("publication", "exehda-pub", valor_umidade_ar)
+  
+  stack_pub("publication", "exehda-pub", condutividade_agua)
+  
+  stack_pub("publication", "exehda-pub", ph_agua)
+  
+  stack_pub("publication", "exehda-pub", pressao_reservatorio)
 
 def sensor_read():
-#    try:
+    try:
         wdtimer.feed()
         sensor_read_simulated()
         global publication_payload
@@ -1214,68 +1122,15 @@ def sensor_read():
         sensor_value_1 = ds.read_temp(temperature_sensor_list[1]) 
  
         pub_sensor_value_0 = round(sensor_value_0, 2)
-        pub_sensor_value_1 = round(sensor_value_1, 2) 
-
-        ano=time.localtime()[0]
-        mes=time.localtime()[1]
-        dia=time.localtime()[2]
-        hora=time.localtime()[3]
-        minuto=time.localtime()[4]
-        segundo=time.localtime()[5]
-        datahorautc=str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-  
-        dict = {}                                                                                                                                                                                              
-        dict["gathered_at"] = datahorautc
-        dict["type"] = "publication"
-        dict["uuid"] = "12876483-61fe-4089-8d51-3059fd89631b"
-        dict["gateway"] = {}
-        dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-        dict["data"] = pub_sensor_value_0
-#        print(dict) 
-        pub_payload = ujson.dumps(dict)
-        stack_pub("exehda-pub", pub_payload)
-
-        ano=time.localtime()[0]
-        mes=time.localtime()[1]
-        dia=time.localtime()[2]
-        hora=time.localtime()[3]
-        minuto=time.localtime()[4]
-        segundo=time.localtime()[5]
-        datahorautc=str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
- 
-        dict = {}                                                                                                                                                                                              
-        dict["gathered_at"] = datahorautc
-        dict["type"] = "publication"
-        dict["uuid"] = "d4a680e2-8918-40fc-820b-867ca99dae38"
-        dict["gateway"] = {}
-        dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-        dict["data"] = pub_sensor_value_1
-
-        pub_payload = ujson.dumps(dict)
-        stack_pub("exehda-pub", pub_payload)   
+        pub_sensor_value_1 = round(sensor_value_1, 2)
+		
+	    stack_pub("publication", "exehda-pub", pub_sensor_value_0)
+	    stack_pub("publication", "exehda-pub", pub_sensor_value_1)		
 
         mqtt_publication()
-#     except:
-#         print("Problems Reading Sensors - Publication Supressed")
-#         ano=time.localtime()[0]
-#         mes=time.localtime()[1]
-#         dia=time.localtime()[2]
-#         hora=time.localtime()[3]
-#         minuto=time.localtime()[4]
-#         segundo=time.localtime()[5]
-# 
-#         datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
-#         dict = {}
-#         dict["gathered_at"] = datahorautc
-#         dict["type"] = "log"
-#         dict["gateway"] = {}
-#         dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-#         dict["data"] = "Problems Reading Sensors - Publication Supressed"
-# 
-#         log_sensor_read = ujson.dumps(dict)
-#         stack_pub("exehda-pub", log_sensor_read)
-        
-        
+     except:
+	    stack_pub("log", "exehda-pub", "Problems Reading Sensors - Publication Supressed")		
+	 	
 min00=0
 min10=0
 min20=0
