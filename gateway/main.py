@@ -44,7 +44,6 @@ publication_topic=[]
 
 # MQTT Settings
 mqtt_client_id = ubinascii.hexlify(machine.unique_id())
-print(mqtt_client_id)
 mqtt_server='200.132.103.53'
 
 # I2C Settings
@@ -60,9 +59,7 @@ temperature_sensor_list = ds.scan()
 ds.convert_temp()
 sensor_value1 = ds.read_temp(temperature_sensor_list[0]) 
 sensor_value2 = ds.read_temp(temperature_sensor_list[1])
-print("Leitura inicial sensores ds18b20")
-print(sensor_value1)
-print(sensor_value2)
+
 
 # Function that places the data to be transmitted in the last position of the queue
 def stack_pub(mqtt_type, uuid_sensor, mqtt_topic, payload):
@@ -92,7 +89,6 @@ def stack_pub(mqtt_type, uuid_sensor, mqtt_topic, payload):
   
     publication_topic.append(mqtt_topic)
     publication_payload.append(mqtt_payload)
-    print(mqtt_payload)
 
 # Function that transmits data using the oldest first criteria as a criterion
 def mqtt_publication():
@@ -160,12 +156,10 @@ while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 10:
 if ajuste_relogio == 1:
     rtc_ds3231.save_time()
     started_time_source = "Gateway restarted with NTP time atualization"
-#    print("Gateway restarted with NTP time atualization")
 else:
     tm = rtc_ds3231.get_time()
     RTC().datetime((tm[0], tm[1], tm[2], tm[6], tm[3], tm[4], tm[5], 0))
     started_time_source = "Gateway restarted with time atualized from local clock (DS3231)"
-#    print("Gateway restarted with time atualized from local clock (DS3231)")
 
 stack_pub("log", "", "exehda-pub", started_time_source)
 
@@ -178,7 +172,6 @@ try:
     data_publication_topic = lista_publication_topic.split("\n")
     while (len(data_publication_topic)  >  0):
         if (len(data_publication_topic[0]) > 0):
-            print(data_publication_topic[0])
             publication_topic.append(data_publication_topic[0])
         data_publication_topic.pop(0)
     file_sensor_topic.close()
@@ -193,7 +186,6 @@ try:
     data_publication_payload = lista_publication_payload.split("\n")
     while (len(data_publication_payload)  >  0):
         if len(data_publication_payload[0]) > 0:
-            print(data_publication_payload[0])
             publication_payload.append(data_publication_payload[0])
         data_publication_payload.pop(0)
     file_sensor_payload.close()
@@ -1193,28 +1185,22 @@ def scheduler(timer):
         if (len(publication_topic)  >  0):
             file_sensor_topic = open("sensor_topic.txt", "w")
             while (len(publication_topic)  >  0):
-#                print(publication_topic[0])
-#                print(str(publication_topic[0]))
                 file_sensor_topic.write(str(publication_topic[0]))
                 file_sensor_topic.write("\n")
-#                print(len(publication_topic))
                 publication_topic.pop(0)
             file_sensor_topic.close()
 # Payloads:
         if (len(publication_payload)  >  0):
             file_sensor_payload = open("sensor_payload.txt", "w")
             while (len(publication_payload)  >  0):
-#                print(publication_payload[0])
-#                print(str(publication_payload[0]))
                 file_sensor_payload.write(str(publication_payload[0]))
                 file_sensor_payload.write("\n")
-#                print(len(publication_payload))
                 publication_payload.pop(0)
             file_sensor_payload.close()
 # Restart device
         machine.reset()
 
-print("Timer started - 1.0 segundos")
+print("Timer started - 1.0 s")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
 
