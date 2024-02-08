@@ -52,32 +52,47 @@ mqtt_server='200.132.103.53'
 i2c_clock = SoftI2C(scl = I2C_RTC_SCL_PIN, sda = I2C_RTC_SDA_PIN)
 rtc_ds3231 = DS3231(i2c_clock)
 
+# DS18b20 first read error handling
+gpio_port=13  
+temperature_sensor_pin = Pin(gpio_port)
+ds = ds18x20.DS18X20(onewire.OneWire(temperature_sensor_pin))
+temperature_sensor_list = ds.scan()    
+ds.convert_temp()
+sensor_value1 = ds.read_temp(temperature_sensor_list[0]) 
+sensor_value2 = ds.read_temp(temperature_sensor_list[1])
+print("Leitura inicial sensores ds18b20")
+print(sensor_value1)
+print(sensor_value2)
+
 # Function that places the data to be transmitted in the last position of the queue
-def stack_pub(mqtt_type, mqtt_topic, payload):
+def stack_pub(mqtt_type, uuid_sensor, mqtt_topic, payload):
 
     global publication_payload
     global publication_topic 
-	
-	ano=time.localtime()[0]
-	mes=time.localtime()[1]
-	dia=time.localtime()[2]
-	hora=time.localtime()[3]
-	minuto=time.localtime()[4]
-	segundo=time.localtime()[5]
+    
+    ano=time.localtime()[0]
+    mes=time.localtime()[1]
+    dia=time.localtime()[2]
+    hora=time.localtime()[3]
+    minuto=time.localtime()[4]
+    segundo=time.localtime()[5]
 
-	datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
+    datahorautc = str(ano)+"-"+str(mes)+"-"+str(dia)+"T"+str(hora)+ ":"+str(minuto)+ "."+str(segundo)
 
-	dict = {}
-	dict["gathered_at"] = datahorautc
-	dict["type"] = mqtt_type
-	dict["gateway"] = {}
-	dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
-	dict["data"] = payload
+    dict = {}
+    dict["gathered_at"] = datahorautc
+    dict["type"] = mqtt_type
+    if ( uuid_sensor != "" ):
+        dict["uuid"] = uuid_sensor
+    dict["gateway"] = {}
+    dict["gateway"]["uuid"] = "15014c0c-694d-45ee-8190-f924a8573947"
+    dict["data"] = payload
 
-	mqtt_payload = ujson.dumps(dict)
+    mqtt_payload = ujson.dumps(dict)
   
     publication_topic.append(mqtt_topic)
     publication_payload.append(mqtt_payload)
+    print(mqtt_payload)
 
 # Function that transmits data using the oldest first criteria as a criterion
 def mqtt_publication():
@@ -103,7 +118,7 @@ def mqtt_publication():
         client_g.disconnect()
         green.value(0)
     except:
-        print("Unable to connect MQTT Broker")
+        stack_pub("log", "", "exehda-pub", "Unable to connect MQTT Broker")
 
 def conecta_rede():
     import network
@@ -130,7 +145,7 @@ print("Time interval to cancel the execution finished - 15 seconds")
 # NTP to internal clock adjust
 tentativas_ajuste_relogio = 0
 ajuste_relogio = 0
-while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 30:
+while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 10:
     print(ajuste_relogio)
     try:
         ntptime.host = "a.ntp.br"
@@ -145,17 +160,17 @@ while ajuste_relogio == 0 and tentativas_ajuste_relogio <= 30:
 if ajuste_relogio == 1:
     rtc_ds3231.save_time()
     started_time_source = "Gateway restarted with NTP time atualization"
-    print("Gateway restarted with NTP time atualization")
+#    print("Gateway restarted with NTP time atualization")
 else:
     tm = rtc_ds3231.get_time()
     RTC().datetime((tm[0], tm[1], tm[2], tm[6], tm[3], tm[4], tm[5], 0))
     started_time_source = "Gateway restarted with time atualized from local clock (DS3231)"
-    print("Gateway restarted with time atualized from local clock (DS3231)")
+#    print("Gateway restarted with time atualized from local clock (DS3231)")
 
-stack_pub("log", "exehda-pub", started_time_source)
+stack_pub("log", "", "exehda-pub", started_time_source)
 
 DS3231_time = "DS3231 time at restart: " + str(rtc_ds3231.get_time())
-stack_pub("log", "exehda-pub", DS3231_time)
+stack_pub("log", "", "exehda-pub", DS3231_time)
 
 try:
     file_sensor_topic = open("sensor_topic.txt", "r")
@@ -168,7 +183,7 @@ try:
         data_publication_topic.pop(0)
     file_sensor_topic.close()
     os.remove("sensor_topic.txt")    
-    print("Gateway restarted with recovery topic sensor data file")
+#    print("Gateway restarted with recovery topic sensor data file")
 except:
     print("Gateway restarted without recovery topic sensor data file")
 
@@ -183,26 +198,16 @@ try:
         data_publication_payload.pop(0)
     file_sensor_payload.close()
     os.remove("sensor_payload.txt")    
-    print("Gateway restarted with recovery payload sensor data file")
-    recovery_status = "Gateway restarted with recovery from sensor data file"
-    
+#    print("Gateway restarted with recovery payload sensor data file")
+    recovery_status = "Gateway restarted with recovery from sensor data file" 
 except:
-    print("Gateway restarted without recovery payload sensor data file")
+#    print("Gateway restarted without recovery payload sensor data file")
     recovery_status = "Gateway restarted without recovery from sensor data file"
 
-stack_pub("log", "exehda-pub", recovery_status)
+stack_pub("log", "", "exehda-pub", recovery_status)
 
 mqtt_publication()
 
-
-# DS18b20 first read error handling
-gpio_port=13  
-temperature_sensor_pin = Pin(gpio_port)
-ds = ds18x20.DS18X20(onewire.OneWire(temperature_sensor_pin))
-temperature_sensor_list = ds.scan()    
-ds.convert_temp()
-sensor_value1 = ds.read_temp(temperature_sensor_list[0]) 
-sensor_value2 = ds.read_temp(temperature_sensor_list[1])
 
 def sensor_read_simulated():
 
@@ -210,6 +215,8 @@ def sensor_read_simulated():
   condutividade_agua = 00.00
   ph_agua = 0.00
   pressao_reservatorio = 00.00
+  hora=time.localtime()[3]
+  minuto=time.localtime()[4]
 
   if (hora == 3):
     if (minuto == 0):
@@ -1099,16 +1106,16 @@ def sensor_read_simulated():
         ph_agua = 6.83
         pressao_reservatorio = 10.68
 
-  stack_pub("publication", "exehda-pub", valor_umidade_ar)
+  stack_pub("publication", "0c0a40d1-5a15-4f26-b85f-25868dfff6ee", "exehda-pub", valor_umidade_ar)
   
-  stack_pub("publication", "exehda-pub", condutividade_agua)
+  stack_pub("publication", "c96e3b82-6e50-4b39-86d4-ab175dbdeb49", "exehda-pub", condutividade_agua)
   
-  stack_pub("publication", "exehda-pub", ph_agua)
+  stack_pub("publication", "e038eaa2-15de-44e0-8395-d3299e69a5d0", "exehda-pub", ph_agua)
   
-  stack_pub("publication", "exehda-pub", pressao_reservatorio)
+  stack_pub("publication", "0f79791e-8135-442f-b890-0ae1b05786d6", "exehda-pub", pressao_reservatorio)
 
 def sensor_read():
-    try:
+#    try:
         wdtimer.feed()
         sensor_read_simulated()
         global publication_payload
@@ -1123,14 +1130,15 @@ def sensor_read():
  
         pub_sensor_value_0 = round(sensor_value_0, 2)
         pub_sensor_value_1 = round(sensor_value_1, 2)
-		
-	    stack_pub("publication", "exehda-pub", pub_sensor_value_0)
-	    stack_pub("publication", "exehda-pub", pub_sensor_value_1)		
+
+        stack_pub("publication", "12876483-61fe-4089-8d51-3059fd89631b", "exehda-pub", pub_sensor_value_0)
+        stack_pub("publication", "d4a680e2-8918-40fc-820b-867ca99dae38", "exehda-pub", pub_sensor_value_1)
 
         mqtt_publication()
-     except:
-	    stack_pub("log", "exehda-pub", "Problems Reading Sensors - Publication Supressed")		
-	 	
+#    except:
+#        stack_pub("log", "exehda-pub", "Problems Reading Sensors - Publication Supressed")
+#        mqtt_publication()
+
 min00=0
 min10=0
 min20=0
@@ -1209,4 +1217,3 @@ def scheduler(timer):
 print("Timer started - 1 s")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
-
