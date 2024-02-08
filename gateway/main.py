@@ -1217,3 +1217,4 @@ def scheduler(timer):
 print("Timer started - 1 s")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
+
