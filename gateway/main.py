@@ -1214,7 +1214,7 @@ def scheduler(timer):
 # Restart device
         machine.reset()
 
-print("Timer started - 1 s")
+print("Timer started - 1.0 segundos")
 tim0 = Timer(0)
 tim0.init(period=1000, mode=Timer.PERIODIC, callback=scheduler)
 
