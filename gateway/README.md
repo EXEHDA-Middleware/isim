@@ -16,3 +16,6 @@
   * [Pinagem](https://esp32io.com/tutorials/esp32-rtc)
 * [Pinagem ESP 32 com 38 pinos](https://www.reddit.com/r/diyelectronics/comments/112dx6n/esp32_38_pin_pinout_cheat_sheet/?rdt=35959) - [Cópía local](https://github.com/exehdamiddleware/isim/blob/main/gateway/esp32-38-pin-pinout.png)
 
+* Trabalhando com I2C:
+  * https://electronics.stackexchange.com/questions/583433/is-it-possible-to-use-two-i2c-interfaces-with-the-esp32-using-micropython
+  * 
