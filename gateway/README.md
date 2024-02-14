@@ -17,7 +17,7 @@
 
 * Trabalhando com I2C:
   * https://electronics.stackexchange.com/questions/583433/is-it-possible-to-use-two-i2c-interfaces-with-the-esp32-using-micropython
-  * * [I2C em Micropython](https://docs.micropython.org/en/latest/library/machine.I2C.html)
+  * [I2C em Micropython](https://docs.micropython.org/en/latest/library/machine.I2C.html)
 
 * Sensor AHT25
   * Driver: https://github.com/etno712/aht/blob/main/README.md
