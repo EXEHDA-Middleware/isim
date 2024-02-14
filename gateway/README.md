@@ -8,7 +8,6 @@
 * https://docs.micropython.org/en/latest/library/os.html
 * https://docs.micropython.org/en/latest/esp32/quickref.html
 * [Manipulação de Arquivos em Python](https://www.guru99.com/python-file-readline.html)
-* [I2C em Micropython](https://docs.micropython.org/en/latest/library/machine.I2C.html)
 * [Documentação Micropython sobre o Relógio da ESP32](https://docs.micropython.org/en/latest/library/machine.RTC.html#machine-rtc)
 * [Como alimentar o kit de desenvolvimento com a ESP32](https://techexplorations.com/guides/esp32/begin/power/)
 * Utilizando o Relógio DS3231:
@@ -18,4 +17,7 @@
 
 * Trabalhando com I2C:
   * https://electronics.stackexchange.com/questions/583433/is-it-possible-to-use-two-i2c-interfaces-with-the-esp32-using-micropython
-  * 
+  * * [I2C em Micropython](https://docs.micropython.org/en/latest/library/machine.I2C.html)
+
+* Sensor AHT25
+  * Driver: https://github.com/etno712/aht/blob/main/README.md
