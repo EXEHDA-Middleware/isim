@@ -22,3 +22,6 @@
 * Sensor AHT25
   * Driver: https://github.com/etno712/aht/blob/main/README.md ([Outro exemplo com driver](https://forums.raspberrypi.com/viewtopic.php?t=343650))
   * [Datasheet do sensor AHT25](https://www.tinytronics.nl/en/sensors/air/humidity/asair-aht25-temperature-and-humidity-sensor-module-i2c) ([cópia local](https://github.com/exehdamiddleware/isim/blob/main/gateway/aht25-temperature-and-humidity-sensor.pdf))
+
+* Sensor XDB305T
+  * [Dados Fabricantes](https://www.xdbsensor.com/xdb305t-industrial-pressure-transmitters-product/)
