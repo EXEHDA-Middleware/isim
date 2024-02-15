@@ -21,3 +21,4 @@
 
 * Sensor AHT25
   * Driver: https://github.com/etno712/aht/blob/main/README.md
+  * Datasheet do sensor AHT25 ([cópia local](https://github.com/exehdamiddleware/isim/blob/main/gateway/aht25-temperature-and-humidity-sensor.pdf))
