@@ -24,4 +24,4 @@
   * [Datasheet do sensor AHT25](https://www.tinytronics.nl/en/sensors/air/humidity/asair-aht25-temperature-and-humidity-sensor-module-i2c) ([cópia local](https://github.com/exehdamiddleware/isim/blob/main/gateway/aht25-temperature-and-humidity-sensor.pdf))
 
 * Sensor XDB305T
-  * [Dados Fabricantes](https://www.xdbsensor.com/xdb305t-industrial-pressure-transmitters-product/)
+  * [Dados Fabricante](https://www.xdbsensor.com/xdb305t-industrial-pressure-transmitters-product/) - [Cópia Local](https://github.com/exehdamiddleware/isim/blob/main/gateway/XDB305T-G1-W5.pdf)
