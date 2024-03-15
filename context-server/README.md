@@ -1,4 +1,4 @@
-### iSim Context Server
+# iSim Context Server
 
 ## Descrição
 
@@ -15,9 +15,9 @@ O projeto é uma aplicação Python que desempenha a gestão de dados provenient
 Para a instalação e execução do projeto basta executar os seguintes comandos:
 
 ```
-git clone git@github.com:IcaroGSiqueira/sanep.git
+git clone git@github.com:exehdamiddleware/isim.git
 ou
-git clone https://github.com/IcaroGSiqueira/sanep.git
+git clone https://github.com/exehdamiddleware/isim.git
 ```
 
 copie o .env.example e o renomeie para .env
@@ -25,7 +25,7 @@ copie o .env.example e o renomeie para .env
 preencha as variaveis com os dados a serem usados e em seguida prosiga com os comandos:
 
 ```
-python3 setup-sanep.py
+python3 setup-server.py
 
 pm2 start pm2.config.js
 ```
