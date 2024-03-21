@@ -285,12 +285,9 @@ def on_message(client, userdata, msg):
         print("Erro ao receber ou processar a mensagem MQTT:", err)
 
 
-callback_api_version = mqtt.MQTTv311
-
-client = mqtt.Client(callback_api_version=callback_api_version)
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
 client.on_connect = on_connect
 client.on_message = on_message
-
 
 if mqtt_secure:
     client.username_pw_set(mqtt_user, password=mqtt_password)
