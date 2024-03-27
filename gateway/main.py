@@ -3,7 +3,7 @@
 # Authors: Graciela Viana
 #          Adenauer Yamin
 #          Fernanda Mota
-# Last editing: 2024-02-06 - 20:44 h
+# Last editing: 2024-02-27 - 20:44 h
 # ######################################## 
 import onewire, ds18x20
 import sys
