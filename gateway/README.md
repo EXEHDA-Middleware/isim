@@ -27,3 +27,5 @@
   * [Dados Fabricante](https://www.xdbsensor.com/xdb305t-industrial-pressure-transmitters-product/) - [Cópia Local](https://github.com/exehdamiddleware/isim/blob/main/gateway/XDB305T-G1-W5.pdf)
 
 * [Repositório com DataSheets referentes aos Hardwares utilizados no iSim](https://drive.google.com/drive/folders/1GTbR5clXO4Rt7ujvoKtBfSWytFnKerUw?usp=sharing)
+
+* [Previsão de Tempo em XML - CPTEC/INPE](http://servicos.cptec.inpe.br/XML/)
