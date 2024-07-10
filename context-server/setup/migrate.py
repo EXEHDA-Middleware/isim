@@ -4,129 +4,62 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-host = os.getenv("MYSQL_HOST")
-usr = os.getenv("MYSQL_USER")
-passw = os.getenv("MYSQL_PASSWORD")
-db = os.getenv("MYSQL_DB_NAME")
+host = os.getenv("MYSQL_INTERNAL_DB_HOST")
+usr = os.getenv("MYSQL_INTERNAL_DB_USER")
+passw = os.getenv("MYSQL_INTERNAL_DB_PASSWORD")
 
-db_conn = mysql.connector.connect(host=host, user=usr, password=passw, database=db)
+db = os.getenv("MYSQL_INTERNAL_DB_NAME")
 
-db_cursor = db_conn.cursor()
+mydb = mysql.connector.connect(host=host, user=usr, password=passw)
+i2mf_cursor = mydb.cursor()
 
-# Create the 'environments' table
-db_cursor.execute(
+i2mf_cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db}")
+
+i2mf_conn = mysql.connector.connect(host=host, user=usr, password=passw, database=db)
+i2mf_cursor = i2mf_conn.cursor()
+
+# Create the 'projects' table
+i2mf_cursor.execute(
     """
-    CREATE TABLE IF NOT EXISTS environments (
+    CREATE TABLE IF NOT EXISTS projects (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-"""
-)
-
-
-# Create the 'gateways' table
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS gateways (
-        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-        environment_id INT,
-        name VARCHAR(255),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (environment_id) REFERENCES environments (id) ON DELETE CASCADE
-    )
-"""
-)
-
-# Create the 'sensor_types' table
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS sensor_types (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255),
-        description TEXT,
-        unit VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )
-"""
-)
-
-# Create the 'sensors' table
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS sensors (
-        id VARCHAR(36) PRIMARY KEY DEFAULT (UUID()),
-        gateway_id VARCHAR(36),
-        type_id INT,
-        name VARCHAR(255),
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (gateway_id) REFERENCES gateways (id) ON DELETE CASCADE,
-        FOREIGN KEY (type_id) REFERENCES sensor_types (id) ON DELETE SET NULL
-    )
-"""
-)
-
-# Create the 'sensor_data' table
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS sensor_data (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        sensor_id VARCHAR(36),
-        data TEXT,
-        gathered_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (sensor_id) REFERENCES sensors (id) ON DELETE CASCADE
-    )
-"""
-)
-
-# Create the 'rules' table
-db_cursor.execute(
-    """
-    CREATE TABLE IF NOT EXISTS rules (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        sensor_id VARCHAR(36),
-        type_id INT,
-        ´condition´ TINYTEXT,
-        value VARCHAR(12),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (sensor_id) REFERENCES sensors (id) ON DELETE CASCADE,
-        FOREIGN KEY (type_id) REFERENCES sensor_types (id) ON DELETE CASCADE
+        origin VARCHAR(255) UNIQUE,
+        host VARCHAR(255),
+        user VARCHAR(255),
+        password VARCHAR(255),
+        `database` VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
 """
 )
 
 # Create the 'logs' table
-db_cursor.execute(
+i2mf_cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        gateway_id VARCHAR(36),
+        project_id INT,
         message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (gateway_id) REFERENCES gateways (id) ON DELETE CASCADE
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
     )
 """
 )
 
 # Create the 'telegram_users' table
-db_cursor.execute(
+i2mf_cursor.execute(
     """
     CREATE TABLE IF NOT EXISTS telegram_users (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        project_id INT,
         code VARCHAR(16),
         active BOOLEAN DEFAULT True,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
     )
 """
 )
 
-
-db_conn.commit()
-db_conn.close()
+i2mf_conn.commit()
+i2mf_conn.close()

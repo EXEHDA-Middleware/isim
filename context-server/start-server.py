@@ -5,12 +5,19 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 load_dotenv()
 
-host = os.getenv("MYSQL_HOST")
-usr = os.getenv("MYSQL_USER")
-passw = os.getenv("MYSQL_PASSWORD")
-db = os.getenv("MYSQL_DB_NAME")
+internal_host = os.getenv("MYSQL_INTERNAL_DB_HOST")
+internal_usr = os.getenv("MYSQL_INTERNAL_DB_USER")
+internal_passw = os.getenv("MYSQL_INTERNAL_DB_PASSWORD")
+internal_db = os.getenv("MYSQL_INTERNAL_DB_NAME")
+
+project_host = os.getenv("MYSQL_PROJECT_DB_HOST")
+project_usr = os.getenv("MYSQL_PROJECT_DB_USER")
+project_passw = os.getenv("MYSQL_PROJECT_DB_PASSWORD")
+project_db = os.getenv("MYSQL_PROJECT_DB_NAME")
 
 mqtt_topic = os.getenv("MQTT_TOPIC")
 mqtt_broker = os.getenv("MQTT_BROKER")
@@ -18,6 +25,36 @@ mqtt_port = int(os.getenv("MQTT_PORT"))
 mqtt_secure = bool(os.getenv("MQTT_SECURE"))
 mqtt_user = os.getenv("MQTT_USER")
 mqtt_password = os.getenv("MQTT_PASSWORD")
+
+db_conn = None
+db_cursor = None
+
+
+def connect_to_database(host, usr, passw, db):
+    try:
+        internal_db_conn = mysql.connector.connect(
+            host=host, user=usr, password=passw, database=db
+        )
+        internal_db_cursor = internal_db_conn.cursor()
+        return internal_db_conn, internal_db_cursor
+    except Exception as err:
+        print("Erro ao conectar ao banco de dados:", err)
+        return None, None
+
+
+def get_project_db_data(internal_db_conn, internal_db_cursor, project):
+    internal_db_cursor.execute(
+        "SELECT host, user, password, `database` FROM projects WHERE origin = %s",
+        (project,),
+    )
+    project_data = internal_db_cursor.fetchone()
+
+    if project_data is None:
+        print("Projeto não encontrado.")
+        print("Utilizando o banco de dados padrão.")
+        return project_host, project_usr, project_passw, project_db
+
+    return (project_data[0], project_data[1], project_data[2], project_data[3])
 
 
 def process_data(data):
@@ -28,6 +65,8 @@ def process_data(data):
     sensor_data = None
 
     message = None
+
+    project = project_db
 
     data_hora_formatada = None
 
@@ -40,7 +79,11 @@ def process_data(data):
             sensor_uuid = data.get("uuid")
             raw_data = data.get("data")
 
-            sensor_data = round(float(raw_data), 1) if raw_data is not None else None
+            project = data.get("project", project_db)
+
+            gateway_uuid = data.get("gateway").get("uuid")
+
+            sensor_data = round(float(raw_data), 2) if raw_data is not None else None
 
             data_datetime = data.get("gathered_at").split("T")
             time_datetime = data_datetime[1].split(".")
@@ -67,6 +110,7 @@ def process_data(data):
         created_at = datetime.datetime.now()
 
         return {
+            "project": project,
             "type": data_type,
             "gateway": {
                 "uuid": gateway_uuid,
@@ -89,7 +133,78 @@ def process_data(data):
         return None
 
 
-def insert_pub_data(data, db_cursor, db_conn):
+def create_enviroment(data):
+    global db_conn, db_cursor
+    project = data.get("project") if data.get("project") else project_db
+    db_cursor.execute("SELECT id FROM environments WHERE project = %s", (project,))
+    environment_result = db_cursor.fetchone()
+
+    if environment_result is None:
+        # Ambiente não existe, insere novo ambiente
+        environment_name = "temporary_name_" + project
+
+        db_cursor.execute(
+            "INSERT INTO environments (project, name) " "VALUES (%s, %s)",
+            (
+                project,
+                environment_name,
+            ),
+        )
+        environment_id = db_cursor.lastrowid
+        db_conn.commit()
+    else:
+        environment_id = environment_result[0]
+
+    return environment_id
+
+
+def create_gateway(data):
+    global db_conn, db_cursor
+
+    # Verifica se o ambiente existe
+    environment_id = create_enviroment(data)
+
+    gateway_uuid = data.get("gateway").get("uuid")
+    db_cursor.execute("SELECT id FROM gateways WHERE id = %s", (gateway_uuid,))
+    gateway_result = db_cursor.fetchone()
+    created_at = data.get("created_at")
+
+    if gateway_result is None:
+        # Gateway não existe, insere novo gateway
+        gatweay = data.get("gateway").get("name")
+
+        gateway_name = gatweay if gatweay else "temporary_name_" + gateway_uuid
+
+        db_cursor.execute(
+            "INSERT INTO gateways (id, environment_id, name, created_at, updated_at) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (
+                gateway_uuid,
+                environment_id,
+                gateway_name,
+                created_at,
+                created_at,
+            ),
+        )
+        db_conn.commit()
+
+
+# Processa os dados de publicação para disparar os scripts de regras
+def process_pub_data(sensor_uuid):
+    global db_cursor
+    db_cursor.execute("SELECT path FROM scripts WHERE sensor_id = %s", (sensor_uuid,))
+    sensor_scripts = db_cursor.fetchall()
+
+    for sensor_script in sensor_scripts:
+        script_path = sensor_script[0]
+        subprocess.check_call(["python3", script_path, str(sensor_uuid)])
+
+
+# Insere os dados de publicação no banco de dados
+def insert_pub_data(data):
+    global db_conn, db_cursor
+    # Verifica se o gateway existe
+    create_gateway(data)
     # Verifica se o sensor existe
     sensor_uuid = data.get("sensor_data").get("uuid")
     db_cursor.execute("SELECT id FROM sensors WHERE id = %s", (sensor_uuid,))
@@ -119,32 +234,15 @@ def insert_pub_data(data, db_cursor, db_conn):
     )
     db_conn.commit()
 
+    process_pub_data(sensor_uuid)
 
-def insert_config_data(data, db_cursor, db_conn):
+
+def insert_config_data(data):
+    global db_conn, db_cursor
     # Verifica se o gateway existe
-    gateway_uuid = data.get("gateway").get("uuid")
-    db_cursor.execute("SELECT id FROM gateways WHERE id = %s", (gateway_uuid,))
-    gateway_result = db_cursor.fetchone()
-    created_at = data.get("created_at")
-
-    if gateway_result is None:
-        # Gateway não existe, insere novo gateway
-        gateway_name = data.get("gateway").get("name")
-
-        db_cursor.execute(
-            "INSERT INTO gateways (id, name, created_at, updated_at) "
-            "VALUES (%s, %s, %s, %s)",
-            (
-                gateway_uuid,
-                gateway_name,
-                created_at,
-                created_at,
-            ),
-        )
-        db_conn.commit()
+    create_gateway(data)
 
     # Verifica se cada sensor existe
-
     for sensor in data["devices"]:
         sensor_uuid = sensor.get("uuid")
 
@@ -153,6 +251,7 @@ def insert_config_data(data, db_cursor, db_conn):
 
         sensor_name = sensor.get("name")
         sensor_type = sensor.get("driver")
+        created_at = data.get("created_at")
 
         sensor_types = {
             "temperature": 1,
@@ -206,28 +305,10 @@ def insert_config_data(data, db_cursor, db_conn):
             db_conn.commit()
 
 
-def insert_log_data(data, db_cursor, db_conn):
+def insert_log_data(data):
+    global db_conn, db_cursor
     # Verifica se o gateway existe
-    gateway_uuid = data.get("gateway").get("uuid")
-    db_cursor.execute("SELECT id FROM gateways WHERE id = %s", (gateway_uuid,))
-    gateway_result = db_cursor.fetchone()
-
-    if gateway_result is None:
-        # Gateway não existe, insere novo gateway
-        gateway_name = "temporary_name_" + gateway_uuid
-        created_at = data.get("created_at")
-
-        db_cursor.execute(
-            "INSERT INTO gateways (id, name, created_at, updated_at) "
-            "VALUES (%s, %s, %s, %s)",
-            (
-                gateway_uuid,
-                gateway_name,
-                created_at,
-                created_at,
-            ),
-        )
-        db_conn.commit()
+    create_gateway(data)
 
     message = data.get("log").get("message")
     value_date = data.get("log").get("date_time")
@@ -241,24 +322,32 @@ def insert_log_data(data, db_cursor, db_conn):
 
 
 def insert_data_into_database(data):
+    global db_conn, db_cursor
     if data is None:
         return
     try:
-        db_conn = mysql.connector.connect(
-            host=host, user=usr, password=passw, database=db
+        internal_db_conn, internal_db_cursor = connect_to_database(
+            internal_host, internal_usr, internal_passw, internal_db
         )
-        db_cursor = db_conn.cursor()
+
+        project = data.get("project", project_db)
+
+        host, usr, passw, db = get_project_db_data(
+            internal_db_conn, internal_db_cursor, project
+        )
+
+        db_conn, db_cursor = connect_to_database(host, usr, passw, db)
 
         data_type = data.get("type")
 
         if data_type == "identification":
-            insert_config_data(data, db_cursor, db_conn)
+            insert_config_data(data)
 
         elif data_type == "publication":
-            insert_pub_data(data, db_cursor, db_conn)
+            insert_pub_data(data)
 
         elif data_type == "log":
-            insert_log_data(data, db_cursor, db_conn)
+            insert_log_data(data)
 
     except Exception as err:
         print("Erro ao inserir os dados no banco de dados:", err)
@@ -283,6 +372,12 @@ def on_message(client, userdata, msg):
             insert_data_into_database(processed_data)
     except Exception as err:
         print("Erro ao receber ou processar a mensagem MQTT:", err)
+
+    # try:
+    #     subprocess.check_call(["python3", os.path.join(script_dir, "weather.py")])
+    # except subprocess.CalledProcessError as e:
+    #     print("Weather data collect failed.")
+    #     print(e)
 
 
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)

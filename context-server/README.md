@@ -12,20 +12,26 @@ O projeto é uma aplicação Python que desempenha a gestão de dados provenient
 
 ## Instalação
 
-Para a instalação e execução do projeto basta executar os seguintes comandos:
+Use um dos comandos abaixo para clonar o repositório:
 
-```
-git clone git@github.com:exehdamiddleware/isim.git
+`git clone git@github.com:exehdamiddleware/isim.git`
+
 ou
-git clone https://github.com/exehdamiddleware/isim.git
-```
 
-copie o .env.example e o renomeie para .env
+`git clone https://github.com/exehdamiddleware/isim.git`
 
-preencha as variaveis com os dados a serem usados e em seguida prosiga com os comandos:
+Faça uma copia do .env.example e o renomeie para .env
 
-```
-python3 setup-server.py
+Preencha as variaveis com os dados a serem usados e em seguida prosiga com os comandos:
 
-pm2 start pm2.config.js
-```
+- Faz o setup de dependencias e do banco interno que irá possuir os projetos, além de criar um banco padrão pronto para uso:
+
+  `python3 context-server/setup-server.py`
+
+- Opcionalmente rode o seguinte comando para adicionar novos projetos:
+
+  `python3 context-server/setup/bases/index.py <PROJECT_NAME> <MYSQL_HOST> <MYSQL_USER> <MYSQL_PASSWORD> <MYSQL_DB_NAME>`
+
+- Para rodar o projeto:
+
+  `pm2 start context-server/pm2.config.js`

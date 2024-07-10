@@ -2,7 +2,7 @@ import pkg_resources
 import subprocess
 
 # Define the required dependencies
-dependencies = ["paho-mqtt", "datetime", "mysql-connector-python", "python-dotenv"]
+dependencies = ["paho-mqtt", "datetime", "mysql-connector-python", "python-dotenv", "decorator"]
 
 # Check if all dependencies are installed
 missing_dependencies = []
