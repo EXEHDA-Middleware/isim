@@ -7,7 +7,7 @@ Este trabalho está sendo desenvolvido no escopo do convênio existente entre o 
 
 **bot-telegram:**
 
-**context-server:** \\
+**context-server:** //
 Neste diretório estão ...
 
 **gateway:**
