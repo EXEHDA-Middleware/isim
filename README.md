@@ -5,7 +5,9 @@ Este trabalho está sendo desenvolvido no escopo do convênio existente entre o 
 
 #### Descrição dos Diretórios
 
-**context-server:**
+**bot-telegram:**
+
+**context-server:** \\
 Neste diretório estão ...
 
 **gateway:**
