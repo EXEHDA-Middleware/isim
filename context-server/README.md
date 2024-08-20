@@ -2,13 +2,13 @@
 
 ## Descrição
 
-O projeto é uma aplicação Python que desempenha a gestão de dados provenientes de dispositivos IoT por meio do protocolo MQTT. Ele recebe continuamente dados de sensores, os armazena banco de dados persistente e oferece a capacidade de criar regras de disparo de alertas com a ajuda de um bot integrado.
+O projeto consiste de um software desenvolvido na Linguagem Python que desempenha a gestão de dados provenientes de dispositivos IoT por meio do protocolo MQTT. Ele recebe continuamente dados de sensores, os armazena banco de dados persistente e oferece a capacidade de criar regras de disparo de alertas com a ajuda de um Bot Telegram concebido para operar de forma integrada.
 
 ## Pré-requisitos
 
-- Python 3
-- MySQL
-- PM2
+- Linguagem Python 3
+- Gerenciador de Banco de Dados MySQL
+- PM2 Process Management
 
 ## Instalação
 
