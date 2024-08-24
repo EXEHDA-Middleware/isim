@@ -4,6 +4,7 @@ import datetime
 import mysql.connector
 import os
 from dotenv import load_dotenv
+import subprocess
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -190,14 +191,23 @@ def create_gateway(data):
 
 
 # Processa os dados de publicação para disparar os scripts de regras
-def process_pub_data(sensor_uuid):
+def process_pub_data(sensor_uuid, project):
     global db_cursor
     db_cursor.execute("SELECT path FROM scripts WHERE sensor_id = %s", (sensor_uuid,))
     sensor_scripts = db_cursor.fetchall()
 
     for sensor_script in sensor_scripts:
         script_path = sensor_script[0]
-        subprocess.check_call(["python3", script_path, str(sensor_uuid)])
+        subprocess.Popen(
+            [
+                "python3",
+                os.path.join(script_dir, "scripts", script_path),
+                str(sensor_uuid),
+                project,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
 
 
 # Insere os dados de publicação no banco de dados
@@ -214,11 +224,12 @@ def insert_pub_data(data):
     if sensor_result is None:
         # Sensor não existe, insere novo sensor
         sensor_name = "temporary_name_" + sensor_uuid
+        gateway_uuid = data.get("gateway").get("uuid")
         db_cursor.execute(
             "INSERT INTO sensors "
-            "(id, name, created_at, updated_at) "
-            "VALUES (%s, %s, %s, %s)",
-            (sensor_uuid, sensor_name, created_at, created_at),
+            "(id, name, gateway_id, created_at, updated_at) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (sensor_uuid, gateway_uuid, sensor_name, created_at, created_at),
         )
 
         db_conn.commit()
@@ -233,8 +244,6 @@ def insert_pub_data(data):
         (sensor_uuid, value, value_date, created_at),
     )
     db_conn.commit()
-
-    process_pub_data(sensor_uuid)
 
 
 def insert_config_data(data):
@@ -345,6 +354,8 @@ def insert_data_into_database(data):
 
         elif data_type == "publication":
             insert_pub_data(data)
+            sensor_uuid = data.get("sensor_data").get("uuid")
+            process_pub_data(sensor_uuid, project)
 
         elif data_type == "log":
             insert_log_data(data)

@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'isim-main',
-      script: 'start-server.py',
+      script: 'context-server/start-server.py',
       interpreter: 'python3',
       watch: true,
       min_uptime: 5000,
