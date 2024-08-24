@@ -321,6 +321,7 @@ def insert_log_data(data):
 
     message = data.get("log").get("message")
     value_date = data.get("log").get("date_time")
+    gateway_uuid = data.get("gateway").get("uuid")
 
     # Insere os dados do log
     db_cursor.execute(
