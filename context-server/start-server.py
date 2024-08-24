@@ -392,7 +392,10 @@ def on_message(client, userdata, msg):
     #     print(e)
 
 
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+# client = mqtt.Client()
+
 client.on_connect = on_connect
 client.on_message = on_message
 
