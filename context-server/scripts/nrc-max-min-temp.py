@@ -84,9 +84,18 @@ else:
             + " - %s: %s ºC" % (sensor_name, str(sensor_data))
         )
 
+hora, minuto = time.localtime()[3], time.localtime()[4]
+
+#alert_msg.append(
+#      "Diaria 🟢 "
+#      + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
+#      + " - %s: %s ºC" % (sensor_name, str(sensor_data))
+#      )
+
 for msg in alert_msg:
     time.sleep(1)
     requests.post(
+#        "https://ntfy.sh/nrc-adenauer", data=msg.encode(encoding="utf-8")
         "https://ntfy.sh/i2mf-exehda", data=msg.encode(encoding="utf-8")
     )  # TODO: create custom json field on project table to store notifications credentials
 
