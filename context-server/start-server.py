@@ -257,6 +257,7 @@ def insert_config_data(data):
 
         db_cursor.execute("SELECT id FROM sensors WHERE id = %s", (sensor_uuid,))
         sensor_result = db_cursor.fetchone()
+        gateway_uuid = data.get("gateway").get("uuid")
 
         sensor_name = sensor.get("name")
         sensor_type = sensor.get("driver")
