@@ -3,7 +3,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import subprocess
-from datetime import datetime, tzinfo
+from datetime import datetime, tzinfo, timedelta
 import requests
 import threading
 import time
@@ -63,28 +63,45 @@ sensor_data = float(result[0])
 sensor_name = result[1]
 alert_msg = []
 
-print("Sensor data:", sensor_data)
+#print("Sensor data:", sensor_data)
 
-print(sensor_data >= 25.0)
+#print(sensor_data >= 25.0)
 
-data_e_hora_atuais = datetime.now()
+#def convert_utc_to_utc_minus_3(utc_time):
+    # Assuming utc_time is a datetime object in UTC
+    #utc_minus_3_time = utc_time - timedelta(hours=3)
+    #return utc_minus_3_time
+
+# Example usage
+#utc_time = datetime.utcnow()  # Current UTC time
+#utc_minus_3_time = convert_utc_to_utc_minus_3(utc_time)
+
+#print(f"UTC Time: {utc_time}")
+#print(f"UTC-3 Time: {utc_minus_3_time}")
+
+#data_e_hora_atuais = utc_minus_3_time
+data_e_hora_atuais = datetime.utcnow() - timedelta(hours=3)
+
+#data_e_hora_atuais = datetime.now()
 if sensor_data >= 25.0:
     alert_msg.append(
         "ALERTA ⚠️ "
         + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
-        + " - %s: %s ºC" % (sensor_name, str(sensor_data))
+        + " - %s: %s ºC" % (sensor_name, str(round(sensor_data,1)))
     )
 else:
-    hora, minuto = time.localtime()[3], time.localtime()[4]
+#    hora, minuto = time.localtime()[3], time.localtime()[4]
+    hora =  int(data_e_hora_atuais.strftime("%H"))
+    minuto =  int(data_e_hora_atuais.strftime("%M"))
+#    print(hora)
+#    print(minuto)
 
-    if ((hora == 12) and (minuto <= 5)) or ((hora == 11) and (minuto > 57)):
+    if ((hora == 12) and (minuto < 5)) or ((hora == 11) and (minuto > 55)):
         alert_msg.append(
             "Diaria 🟢 "
             + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
-            + " - %s: %s ºC" % (sensor_name, str(sensor_data))
+            + " - %s: %s ºC" % (sensor_name, str(round(sensor_data,1)))
         )
-
-hora, minuto = time.localtime()[3], time.localtime()[4]
 
 #alert_msg.append(
 #      "Diaria 🟢 "
