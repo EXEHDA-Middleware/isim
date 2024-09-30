@@ -229,7 +229,7 @@ def insert_pub_data(data):
             "INSERT INTO sensors "
             "(id, name, gateway_id, created_at, updated_at) "
             "VALUES (%s, %s, %s, %s, %s)",
-            (sensor_uuid, gateway_uuid, sensor_name, created_at, created_at),
+            (sensor_uuid, sensor_name, gateway_uuid, created_at, created_at),
         )
 
         db_conn.commit()
