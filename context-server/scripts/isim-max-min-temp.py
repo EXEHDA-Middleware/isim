@@ -45,7 +45,7 @@ cursor = conn.cursor()
 
 # Execute the SQL query to retrieve the maximum and minimum temperature for the given sensor ID
 query = """
-    SELECT data, sensors.name 
+    SELECT data, sensors.name, gathered_at
     FROM sensor_data 
     LEFT JOIN sensors ON sensor_data.sensor_id = sensors.id  
     WHERE sensor_id = %s 
@@ -61,49 +61,51 @@ if result is None:
 
 sensor_data = float(result[0])
 sensor_name = result[1]
+sensor_gathered_at = result[2]
+
 alert_msg = []
 
-#print("Sensor data:", sensor_data)
+# print("Sensor data:", sensor_data)
 
-#print(sensor_data >= 25.0)
+# print(sensor_data >= 25.0)
 
-#def convert_utc_to_utc_minus_3(utc_time):
-    # Assuming utc_time is a datetime object in UTC
-    #utc_minus_3_time = utc_time - timedelta(hours=3)
-    #return utc_minus_3_time
+# def convert_utc_to_utc_minus_3(utc_time):
+# Assuming utc_time is a datetime object in UTC
+# utc_minus_3_time = utc_time - timedelta(hours=3)
+# return utc_minus_3_time
 
 # Example usage
-#utc_time = datetime.utcnow()  # Current UTC time
-#utc_minus_3_time = convert_utc_to_utc_minus_3(utc_time)
+# utc_time = datetime.utcnow()  # Current UTC time
+# utc_minus_3_time = convert_utc_to_utc_minus_3(utc_time)
 
-#print(f"UTC Time: {utc_time}")
-#print(f"UTC-3 Time: {utc_minus_3_time}")
+# print(f"UTC Time: {utc_time}")
+# print(f"UTC-3 Time: {utc_minus_3_time}")
 
-#data_e_hora_atuais = utc_minus_3_time
-data_e_hora_atuais = datetime.utcnow() - timedelta(hours=3)
+# data_e_hora_atuais = utc_minus_3_time
+data_e_hora_atuais = sensor_gathered_at - timedelta(hours=3)
 
-#data_e_hora_atuais = datetime.now()
-if sensor_data >= 25.0:
+# data_e_hora_atuais = datetime.now()
+if sensor_data >= 30.0:
     alert_msg.append(
         "ALERTA ⚠️ "
         + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
-        + " - %s: %s ºC" % (sensor_name, str(round(sensor_data,1)))
+        + " - %s: %s ºC" % (sensor_name, str(round(sensor_data, 1)))
     )
 else:
-#    hora, minuto = time.localtime()[3], time.localtime()[4]
-    hora =  int(data_e_hora_atuais.strftime("%H"))
-    minuto =  int(data_e_hora_atuais.strftime("%M"))
-#    print(hora)
-#    print(minuto)
+    #    hora, minuto = time.localtime()[3], time.localtime()[4]
+    hora = int(data_e_hora_atuais.strftime("%H"))
+    minuto = int(data_e_hora_atuais.strftime("%M"))
+    #    print(hora)
+    #    print(minuto)
 
     if ((hora == 12) and (minuto < 5)) or ((hora == 11) and (minuto > 55)):
         alert_msg.append(
             "Diaria 🟢 "
             + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
-            + " - %s: %s ºC" % (sensor_name, str(round(sensor_data,1)))
+            + " - %s: %s ºC" % (sensor_name, str(round(sensor_data, 1)))
         )
 
-#alert_msg.append(
+# alert_msg.append(
 #      "Diaria 🟢 "
 #      + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
 #      + " - %s: %s ºC" % (sensor_name, str(sensor_data))
@@ -112,8 +114,9 @@ else:
 for msg in alert_msg:
     time.sleep(1)
     requests.post(
-#        "https://ntfy.sh/nrc-adenauer", data=msg.encode(encoding="utf-8")
-        "https://ntfy.sh/isim-sanep", data=msg.encode(encoding="utf-8")
+        #        "https://ntfy.sh/nrc-adenauer", data=msg.encode(encoding="utf-8")
+        "https://ntfy.sh/i2mf-isim",
+        data=msg.encode(encoding="utf-8"),
     )  # TODO: create custom json field on project table to store notifications credentials
 
 

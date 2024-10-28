@@ -85,7 +85,7 @@ alert_msg = []
 data_e_hora_atuais = sensor_gathered_at - timedelta(hours=3)
 
 # data_e_hora_atuais = datetime.now()
-if sensor_data >= 25.0:
+if sensor_data >= 50.0:
     alert_msg.append(
         "ALERTA ⚠️ "
         + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
@@ -101,8 +101,8 @@ else:
     if ((hora == 12) and (minuto < 5)) or ((hora == 11) and (minuto > 55)):
         alert_msg.append(
             "Diaria 🟢 "
-            + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M")
-            + " - %s: %s ºC" % (sensor_name, str(round(sensor_data, 1)))
+            + data_e_hora_atuais.strftime("%d/%m/%Y %H:%M") + ": \n"
+            + "%s: %s ºC" % (sensor_name, str(round(sensor_data, 1)))
         )
 
 # alert_msg.append(
@@ -115,8 +115,7 @@ for msg in alert_msg:
     time.sleep(1)
     requests.post(
         #        "https://ntfy.sh/nrc-adenauer", data=msg.encode(encoding="utf-8")
-#        "https://ntfy.sh/i2mf-exehda",
-        "https://ntfy.sh/i2mf-nrc",
+        "https://ntfy.sh/i2mf-diva",
         data=msg.encode(encoding="utf-8"),
     )  # TODO: create custom json field on project table to store notifications credentials
 
