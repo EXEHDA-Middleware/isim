@@ -5,9 +5,6 @@ Este trabalho está sendo desenvolvido no escopo do convênio existente entre o 
 
 #### Descrição dos Diretórios
 
-**bot-telegram:**  
-Neste diretório ...
-
 **context-server:**
 
 # iSim Context Server
