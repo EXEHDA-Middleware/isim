@@ -137,7 +137,7 @@ def process_data(data):
 def create_enviroment(data):
     global db_conn, db_cursor
     project = data.get("project") if data.get("project") else project_db
-    db_cursor.execute("SELECT id FROM environments WHERE project = %s", (project,))
+    db_cursor.execute("SELECT id FROM environments WHERE project = %s LIMIT 1", (project,))
     environment_result = db_cursor.fetchone()
 
     if environment_result is None:
