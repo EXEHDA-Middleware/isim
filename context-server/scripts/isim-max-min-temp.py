@@ -55,6 +55,9 @@ query = """
 cursor.execute(query, (sensor_id,))
 result = cursor.fetchone()
 
+# Close the database connection
+conn.close()
+
 if result is None:
     print("No data found for the given sensor ID")
     sys.exit(1)
@@ -118,7 +121,3 @@ for msg in alert_msg:
         "https://ntfy.sh/i2mf-isim",
         data=msg.encode(encoding="utf-8"),
     )  # TODO: create custom json field on project table to store notifications credentials
-
-
-# Close the database connection
-conn.close()
