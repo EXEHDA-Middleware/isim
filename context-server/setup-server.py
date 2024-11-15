@@ -1,3 +1,12 @@
+# ########################################
+# Gateway EXEHDA - iSim Version
+# Authors: Graciela Viana
+#          Ícaro Siqueira
+#          Adenauer Yamin
+#          Lizandro Oliveira
+# Last editing: 2024-09-19 - 19:44 h
+# ########################################
+
 import subprocess
 import os
 
