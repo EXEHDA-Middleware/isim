@@ -2,8 +2,8 @@
 # Gateway EXEHDA - iSim Version
 # Authors: Graciela Viana
 #          Adenauer Yamin
-#          Fernanda Mota
-# Last editing: 2024-04-19 - 19:44 h
+#          Lizandro Oliveira
+# Last editing: 2024-09-19 - 19:44 h
 # ########################################
 import onewire, ds18x20
 import sys
