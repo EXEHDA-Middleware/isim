@@ -1,3 +1,11 @@
+# ########################################
+# Gateway EXEHDA - iSim Version
+# Authors: Graciela Viana
+#          Ícaro Siqueira
+#          Adenauer Yamin
+#          Lizandro Oliveira
+# Last editing: 2024-09-19 - 19:44 h
+# ########################################
 import paho.mqtt.client as mqtt
 import json
 import datetime
