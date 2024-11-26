@@ -34,11 +34,11 @@ Preencha as variaveis com os dados a serem usados e em seguida prosiga com os co
 
   `python3 context-server/setup-server.py`
 
-- Opcionalmente rode o seguinte comando para adicionar novos projetos:
+- Opcionalmente execute o seguinte comando para adicionar novos projetos:
 
   `python3 context-server/setup/bases/index.py <PROJECT_NAME> <MYSQL_HOST> <MYSQL_USER> <MYSQL_PASSWORD> <MYSQL_DB_NAME>`
 
-- Para rodar o projeto:
+- Para executar o projeto:
 
   `pm2 start context-server/pm2.config.js`
 
